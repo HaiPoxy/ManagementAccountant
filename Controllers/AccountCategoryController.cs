@@ -208,8 +208,6 @@ namespace AccountManagermnet.Controllers
              return Ok(ParentId);
         }
 
-
-
         [HttpPost]
         public async Task<ActionResult<AccountCategory>> Create(AccountCategoryDTO accountCategoryDTO)
         {

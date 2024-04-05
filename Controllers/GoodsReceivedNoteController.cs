@@ -65,15 +65,16 @@ namespace AccountManagermnet.Controllers
         [HttpPost]
         public async Task<ActionResult<GoodsReceivedNote>> CreateNewGRN(GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
-            var existingGRN = await _context.GoodsReceivedNotes.FirstOrDefaultAsync(g => g.GRNId == goodsReceivedNoteDTO.GRNId);
-            if (existingGRN is not null)
-            {
-                return Conflict(ErrorConst.ID_IS_EXISTS);
-            }
-            using (IDbContextTransaction transaction = _context.Database.BeginTransaction())
+            using (IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
+                    var existingGRN = await _context.GoodsReceivedNotes.FirstOrDefaultAsync(g => g.GRNId == goodsReceivedNoteDTO.GRNId);
+                    if (existingGRN is not null)
+                    {
+                        await transaction.RollbackAsync();
+                        return Conflict(ErrorConst.ID_IS_EXISTS);
+                    }
                     var newGRN = new GoodsReceivedNote
                     {
                         DocumentDay = goodsReceivedNoteDTO.DocumentDay,
@@ -100,13 +101,14 @@ namespace AccountManagermnet.Controllers
                             _context.GoodsReceivedNoteDetails.Add(newGRNDetail);
                         }
                     await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
                     return Ok("Thêm thành công");
 
-                    transaction.Commit();
                 }
-                catch (Exception )
+                catch (Exception)
                 {
-                    transaction.Rollback();
+                    await transaction.RollbackAsync();
                     return StatusCode(500, $"Lỗi khi tạo phiếu nhập");
 
                 }
@@ -114,24 +116,46 @@ namespace AccountManagermnet.Controllers
             }
 
         }
+        
+
         [HttpPut("{id}")]
-        public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(int id, GoodsReceivedNoteDTO goodsReceivedNoteDTO)
+        public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(int id, [FromBody] GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
             var existingGRN = await _context.GoodsReceivedNotes
-                                     .FirstOrDefaultAsync(g => g.GRNId == id);
+                                .Include(d => d.GoodsReceivedNoteDetails)
+                                .FirstOrDefaultAsync(g => g.GRNId == id);
             if (existingGRN is null)
             {
                 return NotFound(string.Format(ErrorConst.ID_IS_NOT_EXISTS, goodsReceivedNoteDTO.GRNId));
             }
 
+            // Cập nhật các thuộc tính của GoodsReceivedNote
             existingGRN.DocumentDay = goodsReceivedNoteDTO.DocumentDay;
             existingGRN.DocumentNumber = goodsReceivedNoteDTO.DocumentNumber;
             existingGRN.Detail = goodsReceivedNoteDTO.Detail;
             existingGRN.PersonID = goodsReceivedNoteDTO.PersonID;
-            goodsReceivedNoteDTO.GoodReceivedNoteDetails = null;
+
+            //Xóa goodsReceivedNoteDetail hiện tại
+            _context.GoodsReceivedNoteDetails.RemoveRange(existingGRN.GoodsReceivedNoteDetails);
+
+            foreach (var detailDTO in goodsReceivedNoteDTO.GoodReceivedNoteDetails)
+            {
+                //Thêm goodsReceivedNoteDetail mới
+                existingGRN.GoodsReceivedNoteDetails.Add(new GoodsReceivedNoteDetail
+                {
+                    WarehousId = detailDTO.WarehousId,
+                    Quantity = detailDTO.Quantity,
+                    UnitPirce = detailDTO.UnitPirce,
+                    DebitAccount = detailDTO.DebitAccount,
+                    CreditAccount = detailDTO.CreditAccount,
+                    GRN_Id = detailDTO.GRN_Id,
+                    ProductId = detailDTO.ProductId
+                });
+            }
             await _context.SaveChangesAsync();
             return Ok("Cập nhật thành công");
         }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
