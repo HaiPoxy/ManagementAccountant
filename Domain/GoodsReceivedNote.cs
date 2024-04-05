@@ -2,6 +2,7 @@
 //using System.Diagnostics.CodeAnalysis;
 
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace AccountManagermnet.Domain
@@ -9,9 +10,8 @@ namespace AccountManagermnet.Domain
     public class GoodsReceivedNote
     {
         [Key]
-        [NotNull]
-        [StringLength(50)]
-        public string GRNId { get; set; } = "";
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int GRNId { get; set; }
         [StringLength(50)]
         public string DocumentDay { get; set; }= "";
 

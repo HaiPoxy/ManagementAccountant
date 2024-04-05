@@ -16,5 +16,6 @@ namespace AccountManagermnet.DTO
         
         public string TaxCode { get; set; } 
 
+        public string TaxNumber { get; set;}
     }
 }

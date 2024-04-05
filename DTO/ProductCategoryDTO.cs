@@ -8,7 +8,7 @@
         public string RevenueAcc { get; set; }
         public string GoodsAcc { get; set; }
         public string GOGSAcc { get; set; }
-        public List<string> GoodReceivedNoteDetails { get; set; }
+        //public List<GoodReceivedNoteDetailDTO> GoodReceivedNoteDetails { get; set; }
 
     }
 }

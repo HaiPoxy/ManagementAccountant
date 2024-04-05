@@ -5,7 +5,7 @@ namespace AccountManagermnet.DTO
 {
     public class GoodsReceivedNoteDTO
     {
-        public string GRNId { get; set; } 
+        public int GRNId { get; set; } 
         public string DocumentDay { get; set; } 
 
         public string DocumentNumber { get; set; } 
@@ -15,6 +15,6 @@ namespace AccountManagermnet.DTO
         public string PersonID { get; set; }
 
         //liên kết 1 to many với bảng GoodsReceivedNoteDetail
-        public List<string> GoodReceivedNoteDetails { get; set; }
+        public List<GoodReceivedNoteDetailDTO> GoodReceivedNoteDetails { get; set; }
     }
 }

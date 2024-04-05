@@ -1,15 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AccountManagermnet.Domain
 {
     public class GoodsReceivedNoteDetail
     {
         [Key]
-        [NotNull]
-        [StringLength(50)]
-        public string GRNDId { get; set; } = "";
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int GRNDId { get; set; }
         [StringLength(50)]
         public string WarehousId { get; set; } = "";
         public int Quantity { get; set; }
@@ -20,7 +20,7 @@ namespace AccountManagermnet.Domain
         public string CreditAccount { get; set; } = "";
 
         //Liên kết One to Many vs GoodsReceivedNote
-        public string GRN_Id {  get; set; }
+        public int GRN_Id {  get; set; }
         public GoodsReceivedNote GoodsReceivedNote { get; set; }
 
         //Liên kết One to Many vs ProductCategory

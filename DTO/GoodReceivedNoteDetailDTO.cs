@@ -5,7 +5,8 @@ namespace AccountManagermnet.DTO
 {
     public class GoodReceivedNoteDetailDTO
     {
-        public string GRNDId { get; set; } 
+
+        public int GRNDId { get; set; } 
         public string WarehousId { get; set; } 
         public int Quantity { get; set; }
         public int UnitPirce { get; set; }
@@ -13,7 +14,7 @@ namespace AccountManagermnet.DTO
         public string CreditAccount { get; set; } 
 
         //Liên kết One to Many vs GoodsReceivedNote
-        public string GRN_Id { get; set; }
+        public int GRN_Id { get; set; }
 
         //Liên kết One to Many vs ProductCategory
         public string ProductId { get; set; }

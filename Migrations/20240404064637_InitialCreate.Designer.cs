@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AccountManagermnet.Migrations
 {
     [DbContext(typeof(AccountDbContext))]
-    [Migration("20240329014258_InitialCreateV1")]
-    partial class InitialCreateV1
+    [Migration("20240404064637_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -56,9 +56,11 @@ namespace AccountManagermnet.Migrations
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNote", b =>
                 {
-                    b.Property<string>("GRNId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("GRNId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GRNId"));
 
                     b.Property<string>("Detail")
                         .IsRequired()
@@ -89,9 +91,11 @@ namespace AccountManagermnet.Migrations
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNoteDetail", b =>
                 {
-                    b.Property<string>("GRNDId")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("GRNDId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GRNDId"));
 
                     b.Property<string>("CreditAccount")
                         .IsRequired()
@@ -103,9 +107,8 @@ namespace AccountManagermnet.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("GRN_Id")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("GRN_Id")
+                        .HasColumnType("int");
 
                     b.Property<string>("ProductId")
                         .IsRequired()
