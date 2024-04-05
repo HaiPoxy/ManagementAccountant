@@ -25,7 +25,7 @@ namespace AccountManagermnet.Controllers
             var query = _context.GoodsReceivedNoteDetails.AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(gd => gd.GRNDId.Contains(search));
+                query = query.Where(gd => gd.GRNDId.ToString().Contains(search));
             }
             var GRNdetail = await query.OrderBy(gd => gd.GRNDId)
                                        .Skip(offset)
@@ -51,24 +51,25 @@ namespace AccountManagermnet.Controllers
                 pageResult.total_count = await query.CountAsync();
             }
 
-            //var pageResult = await query.ToListAsync();
-            var listGRND = await _context.GoodsReceivedNoteDetails
-                .Include(g => g.ProductCategorys)
-                .Select(g => new
-                {
-                    g.GRNDId,
-                    g.WarehousId,
-                    g.Quantity,
-                    g.UnitPirce,
-                    g.DebitAccount,
-                    g.CreditAccount,
-                    g.GRN_Id,
-                    g.ProductId,
+            
+            //var listGRND = await _context.GoodsReceivedNoteDetails
+            //    .Include(g => g.ProductCategorys)
+            //    .Select(g => new
+            //    {
+            //        g.GRNDId,
+            //        g.WarehousId,
+            //        g.Quantity,
+            //        g.UnitPirce,
+            //        g.DebitAccount,
+            //        g.CreditAccount,
+            //        g.GRN_Id,
+            //        g.ProductId,
       
-                })
-                .ToListAsync();
+            //    })
+            //    .ToListAsync();
+            //return Ok(listGRND);
 
-            return Ok(listGRND);
+            return Ok(pageResult);
 
 
         }
@@ -82,7 +83,6 @@ namespace AccountManagermnet.Controllers
             }
             var newGRNdetail = new GoodsReceivedNoteDetail
             {
-                GRNDId = goodReceivedNoteDetailDTO.GRNDId,
                 WarehousId = goodReceivedNoteDetailDTO.WarehousId,
                 Quantity = goodReceivedNoteDetailDTO.Quantity,
                 UnitPirce = goodReceivedNoteDetailDTO.UnitPirce,
@@ -96,7 +96,7 @@ namespace AccountManagermnet.Controllers
             return Ok(newGRNdetail);
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult<GoodsReceivedNoteDetail>> UpdateGRNdetail(string id,GoodReceivedNoteDetailDTO goodReceivedNoteDetailDTO )
+        public async Task<ActionResult<GoodsReceivedNoteDetail>> UpdateGRNdetail(int id,GoodReceivedNoteDetailDTO goodReceivedNoteDetailDTO )
         {
             var existingGRNdetail = await _context.GoodsReceivedNoteDetails.FirstOrDefaultAsync(gd => gd.GRNDId == id);
             if (existingGRNdetail is null)
@@ -116,7 +116,7 @@ namespace AccountManagermnet.Controllers
             return Ok("Cập nhật thành công");
         }
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(string id)
+        public async Task<ActionResult> Delete(int id)
         {
             var existingGRNdetail = await _context.GoodsReceivedNoteDetails.FirstOrDefaultAsync(gd => gd.GRNDId == id);
             if (existingGRNdetail is null)

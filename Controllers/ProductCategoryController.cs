@@ -39,9 +39,6 @@ namespace AccountManagermnet.Controllers
                                                   RevenueAcc = p.RevenueAcc, 
                                                   GOGSAcc = p.GOGSAcc,
                                                   GoodsAcc = p.GoodsAcc,
-                                                  GoodReceivedNoteDetails = p.GoodsReceivedNoteDetails
-                                                          .Select(d => d.GRNDId)
-                                                          .ToList()
                                               })
          
                                               .ToListAsync();

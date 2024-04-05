@@ -4,6 +4,7 @@ using AccountManagermnet.Domain;
 using AccountManagermnet.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Security.AccessControl;
 
 namespace AccountManagermnet.Controllers
@@ -24,26 +25,24 @@ namespace AccountManagermnet.Controllers
             var query = _context.GoodsReceivedNotes.AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(g => g.GRNId.Contains(search));
+                query = query.Where(g => g.GRNId.ToString().Contains(search));
+
             }
             var grnList = await query.OrderBy(x => x.GRNId)
                                      .Skip(offset)
                                      .Take(limit)
-                                     .Select(g => new GoodsReceivedNoteDTO
-                                     {
-                                         GRNId = g.GRNId,
-                                         DocumentDay = g.DocumentDay,
-                                         DocumentNumber = g.DocumentNumber,
-                                         Detail = g.Detail,
-                                         PersonID = g.PersonID,
-                                         GoodReceivedNoteDetails = g.GoodsReceivedNoteDetails
-                                                .Select(d => d.GRNDId)
-                                                .ToList()
-                                         
-                                     })
+                                     .Include(x => x.GoodsReceivedNoteDetails)
+                                     //.Select(g => new GoodsReceivedNoteDTO
+                                     //{
+                                     //    GRNId = g.GRNId,
+                                     //    DocumentDay = g.DocumentDay,
+                                     //    DocumentNumber = g.DocumentNumber,
+                                     //    Detail = g.Detail,
+                                     //    PersonID = g.PersonID,
+                                     //})
                                      .ToListAsync();
 
-            var pageResult = new PageResult<GoodsReceivedNoteDTO>(offset, limit, 0, 0, grnList);
+            var pageResult = new PageResult<GoodsReceivedNote>(offset, limit, 0, 0, grnList);
             pageResult.Pos = offset;
             pageResult.total_count = 0;
             if (offset == 0)
@@ -51,7 +50,7 @@ namespace AccountManagermnet.Controllers
                 pageResult.total_count = await query.CountAsync();
             }
             return Ok(pageResult);
-            
+
 
             ////cách 1
             //var listGRN = await _context.GoodsReceivedNotes
@@ -64,43 +63,78 @@ namespace AccountManagermnet.Controllers
 
         }
         [HttpPost]
-        public async Task<ActionResult<GoodsReceivedNote>> CreateNewGRN (GoodsReceivedNoteDTO goodsReceivedNoteDTO)
+        public async Task<ActionResult<GoodsReceivedNote>> CreateNewGRN(GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
             var existingGRN = await _context.GoodsReceivedNotes.FirstOrDefaultAsync(g => g.GRNId == goodsReceivedNoteDTO.GRNId);
             if (existingGRN is not null)
             {
                 return Conflict(ErrorConst.ID_IS_EXISTS);
             }
-            var newGRN = new GoodsReceivedNote
+            using (IDbContextTransaction transaction = _context.Database.BeginTransaction())
             {
-                GRNId = goodsReceivedNoteDTO.GRNId,
-                DocumentDay = goodsReceivedNoteDTO.DocumentDay,
-                DocumentNumber = goodsReceivedNoteDTO.DocumentNumber,
-                Detail = goodsReceivedNoteDTO.Detail,
-                PersonID = goodsReceivedNoteDTO.PersonID,
-            };
-            _context.GoodsReceivedNotes.Add(newGRN);
-            await _context.SaveChangesAsync();
-            return Ok(newGRN);
+                try
+                {
+                    var newGRN = new GoodsReceivedNote
+                    {
+                        DocumentDay = goodsReceivedNoteDTO.DocumentDay,
+                        DocumentNumber = goodsReceivedNoteDTO.DocumentNumber,
+                        Detail = goodsReceivedNoteDTO.Detail,
+                        PersonID = goodsReceivedNoteDTO.PersonID,
+                    };
+                    _context.GoodsReceivedNotes.Add(newGRN);
+                    await _context.SaveChangesAsync();           
+                        foreach (var detailDTO in goodsReceivedNoteDTO.GoodReceivedNoteDetails)
+                        {
+                            var newGRNDetail = new GoodsReceivedNoteDetail
+                            {
+                                WarehousId = detailDTO.WarehousId,
+                                Quantity = detailDTO.Quantity,
+                                UnitPirce = detailDTO.UnitPirce,
+                                DebitAccount = detailDTO.DebitAccount,
+                                CreditAccount = detailDTO.CreditAccount,
+                                GRN_Id = newGRN.GRNId,
+                                ProductId = detailDTO.ProductId
+                            };
+
+                            // Thêm goodsReceivedNoteDetail vào cơ sở dữ liệu
+                            _context.GoodsReceivedNoteDetails.Add(newGRNDetail);
+                        }
+                    await _context.SaveChangesAsync();
+                    return Ok("Thêm thành công");
+
+                    transaction.Commit();
+                }
+                catch (Exception )
+                {
+                    transaction.Rollback();
+                    return StatusCode(500, $"Lỗi khi tạo phiếu nhập");
+
+                }
+
+            }
+
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(string id, GoodsReceivedNoteDTO goodsReceivedNoteDTO)
+        public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(int id, GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
-            var existingGRN = await _context.GoodsReceivedNotes.FirstOrDefaultAsync(g => g.GRNId == id);
+            var existingGRN = await _context.GoodsReceivedNotes
+                                     .FirstOrDefaultAsync(g => g.GRNId == id);
             if (existingGRN is null)
             {
                 return NotFound(string.Format(ErrorConst.ID_IS_NOT_EXISTS, goodsReceivedNoteDTO.GRNId));
             }
+
             existingGRN.DocumentDay = goodsReceivedNoteDTO.DocumentDay;
             existingGRN.DocumentNumber = goodsReceivedNoteDTO.DocumentNumber;
             existingGRN.Detail = goodsReceivedNoteDTO.Detail;
             existingGRN.PersonID = goodsReceivedNoteDTO.PersonID;
-
+            goodsReceivedNoteDTO.GoodReceivedNoteDetails = null;
             await _context.SaveChangesAsync();
             return Ok("Cập nhật thành công");
         }
-        [HttpDelete]
-        public async Task<ActionResult> Delete(string id)
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
         {
             var existingGRN = await _context.GoodsReceivedNotes.FirstOrDefaultAsync(p => p.GRNId == id);
             if (existingGRN is null)
