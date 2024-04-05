@@ -14,8 +14,6 @@ namespace AccountManagermnet.DTO
         
         public string Email { get; set; }   
         
-        public string TaxCode { get; set; } 
-
-        public string TaxNumber { get; set;}
+        public string TaxCode { get; set; }         
     }
 }
