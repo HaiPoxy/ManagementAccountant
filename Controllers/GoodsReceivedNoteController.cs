@@ -5,7 +5,9 @@ using AccountManagermnet.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Globalization;
 using System.Security.AccessControl;
+
 
 namespace AccountManagermnet.Controllers
 {
@@ -31,15 +33,28 @@ namespace AccountManagermnet.Controllers
             var grnList = await query.OrderBy(x => x.GRNId)
                                      .Skip(offset)
                                      .Take(limit)
-                                     .Include(x => x.GoodsReceivedNoteDetails)
-                                     //.Select(g => new GoodsReceivedNoteDTO
-                                     //{
-                                     //    GRNId = g.GRNId,
-                                     //    DocumentDay = g.DocumentDay,
-                                     //    DocumentNumber = g.DocumentNumber,
-                                     //    Detail = g.Detail,
-                                     //    PersonID = g.PersonID,
-                                     //})
+                                     .Select(g => new GoodsReceivedNote
+                                     {
+                                         GRNId = g.GRNId,
+                                         DocumentDay = g.DocumentDay,
+                                         DocumentNumber = g.DocumentNumber,
+                                         Detail = g.Detail,
+                                         PersonID = g.PersonID,
+                                         GoodsReceivedNoteDetails = g.GoodsReceivedNoteDetails
+                                         .Select(d => new GoodsReceivedNoteDetail
+                                         {
+                                             GRNDId = d.GRNDId,
+                                             WarehousId = d.WarehousId,
+                                             Quantity = d.Quantity,
+                                             UnitPirce = d.UnitPirce,
+                                             DebitAccount = d.DebitAccount,
+                                             CreditAccount = d.CreditAccount,
+                                             GRN_Id = d.GRN_Id,
+                                             ProductId = d.ProductId,
+                                             TotalPrice = (long) d.TotalPrice,
+                                         }).ToList(),
+
+                                     })
                                      .ToListAsync();
 
             var pageResult = new PageResult<GoodsReceivedNote>(offset, limit, 0, 0, grnList);
@@ -75,6 +90,12 @@ namespace AccountManagermnet.Controllers
                         await transaction.RollbackAsync();
                         return Conflict(ErrorConst.ID_IS_EXISTS);
                     }
+                    //DateTime documentDay;
+                    //if (!DateTime.TryParse(goodsReceivedNoteDTO.DocumentDay, out documentDay))
+                    //{
+                    //    // Nếu không thể chuyển đổi, trả về lỗi BadRequest
+                    //    return BadRequest("Không thể chuyển đổi");
+                    //}
                     var newGRN = new GoodsReceivedNote
                     {
                         DocumentDay = goodsReceivedNoteDTO.DocumentDay,
@@ -82,6 +103,7 @@ namespace AccountManagermnet.Controllers
                         Detail = goodsReceivedNoteDTO.Detail,
                         PersonID = goodsReceivedNoteDTO.PersonID,
                     };
+                    
                     _context.GoodsReceivedNotes.Add(newGRN);
                     await _context.SaveChangesAsync();           
                         foreach (var detailDTO in goodsReceivedNoteDTO.GoodReceivedNoteDetails)
@@ -94,7 +116,8 @@ namespace AccountManagermnet.Controllers
                                 DebitAccount = detailDTO.DebitAccount,
                                 CreditAccount = detailDTO.CreditAccount,
                                 GRN_Id = newGRN.GRNId,
-                                ProductId = detailDTO.ProductId
+                                ProductId = detailDTO.ProductId,
+                                TotalPrice = (long) detailDTO.Quantity * detailDTO.UnitPirce,
                             };
 
                             // Thêm goodsReceivedNoteDetail vào cơ sở dữ liệu
@@ -116,8 +139,8 @@ namespace AccountManagermnet.Controllers
             }
 
         }
-        
 
+        
         [HttpPut("{id}")]
         public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(int id, [FromBody] GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
@@ -149,8 +172,9 @@ namespace AccountManagermnet.Controllers
                     DebitAccount = detailDTO.DebitAccount,
                     CreditAccount = detailDTO.CreditAccount,
                     GRN_Id = detailDTO.GRN_Id,
-                    ProductId = detailDTO.ProductId
-                });
+                    ProductId = detailDTO.ProductId,
+                    TotalPrice = (long)detailDTO.Quantity * detailDTO.UnitPirce,
+                }); ;
             }
             await _context.SaveChangesAsync();
             return Ok("Cập nhật thành công");

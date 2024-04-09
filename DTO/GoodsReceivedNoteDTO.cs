@@ -5,8 +5,8 @@ namespace AccountManagermnet.DTO
 {
     public class GoodsReceivedNoteDTO
     {
-        public int GRNId { get; set; } 
-        public string DocumentDay { get; set; } 
+        public int GRNId { get; set; }
+        public DateTime DocumentDay { get; set; } 
 
         public string DocumentNumber { get; set; } 
 

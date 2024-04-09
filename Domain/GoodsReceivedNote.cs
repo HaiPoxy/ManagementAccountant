@@ -12,8 +12,11 @@ namespace AccountManagermnet.Domain
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int GRNId { get; set; }
-        [StringLength(50)]
-        public string DocumentDay { get; set; }= "";
+
+
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime DocumentDay { get; set; }
 
         [StringLength(50)]
         public string DocumentNumber { get; set; } = "";

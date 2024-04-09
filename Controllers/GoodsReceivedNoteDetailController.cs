@@ -5,6 +5,7 @@ using AccountManagermnet.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Xml.Schema;
 
 namespace AccountManagermnet.Controllers
 {
@@ -27,10 +28,10 @@ namespace AccountManagermnet.Controllers
             {
                 query = query.Where(gd => gd.GRNDId.ToString().Contains(search));
             }
-            var GRNdetail = await query.OrderBy(gd => gd.GRNDId)
+            var grnDetail = await query.OrderBy(gd => gd.GRNDId)
                                        .Skip(offset)
                                        .Take(limit)
-                                       .Select( g => new GoodReceivedNoteDetailDTO
+                                       .Select( g => new GoodsReceivedNoteDetail
                                        {
                                           GRNDId = g.GRNDId,
                                           WarehousId = g.WarehousId,
@@ -39,11 +40,12 @@ namespace AccountManagermnet.Controllers
                                           DebitAccount = g.DebitAccount,
                                           CreditAccount = g.CreditAccount,
                                           GRN_Id = g.GRN_Id,
-                                          ProductId = g.ProductId
+                                          ProductId = g.ProductId,
+                                          TotalPrice = g.TotalPrice,
                                        })
                                        .ToListAsync();
 
-            var pageResult = new PageResult<GoodReceivedNoteDetailDTO>(offset, limit, 0, 0, GRNdetail);
+            var pageResult = new PageResult<GoodsReceivedNoteDetail>(offset, limit, 0, 0, grnDetail);
             pageResult.Pos = offset;
             pageResult.total_count = 0;
             if (offset == 0)
@@ -51,28 +53,15 @@ namespace AccountManagermnet.Controllers
                 pageResult.total_count = await query.CountAsync();
             }
 
-            
-            //var listGRND = await _context.GoodsReceivedNoteDetails
-            //    .Include(g => g.ProductCategorys)
-            //    .Select(g => new
-            //    {
-            //        g.GRNDId,
-            //        g.WarehousId,
-            //        g.Quantity,
-            //        g.UnitPirce,
-            //        g.DebitAccount,
-            //        g.CreditAccount,
-            //        g.GRN_Id,
-            //        g.ProductId,
-      
-            //    })
-            //    .ToListAsync();
-            //return Ok(listGRND);
 
             return Ok(pageResult);
 
 
         }
+        //private double CalculateTotal(int quantity, int unitPrice)
+        //{
+        //    return (double) quantity * unitPrice;
+        //}
         [HttpPost]
         public async Task<ActionResult<GoodsReceivedNoteDetail>> CreateNewGRNdetail(GoodReceivedNoteDetailDTO goodReceivedNoteDetailDTO)
         {
@@ -81,15 +70,18 @@ namespace AccountManagermnet.Controllers
             {
                 return Conflict(ErrorConst.ID_IS_EXISTS);
             }
+
             var newGRNdetail = new GoodsReceivedNoteDetail
+
             {
                 WarehousId = goodReceivedNoteDetailDTO.WarehousId,
-                Quantity = goodReceivedNoteDetailDTO.Quantity,
+                Quantity = goodReceivedNoteDetailDTO.Quantity,      
                 UnitPirce = goodReceivedNoteDetailDTO.UnitPirce,
                 DebitAccount = goodReceivedNoteDetailDTO.DebitAccount,
                 CreditAccount = goodReceivedNoteDetailDTO.CreditAccount,
                 GRN_Id = goodReceivedNoteDetailDTO.GRN_Id,
                 ProductId = goodReceivedNoteDetailDTO.ProductId,
+                TotalPrice = goodReceivedNoteDetailDTO.Quantity * goodReceivedNoteDetailDTO.UnitPirce,
             };
             _context.GoodsReceivedNoteDetails.Add(newGRNdetail);
             await _context.SaveChangesAsync();
@@ -103,6 +95,8 @@ namespace AccountManagermnet.Controllers
             {
                 return NotFound(string.Format(ErrorConst.ID_IS_NOT_EXISTS, goodReceivedNoteDetailDTO.GRNDId));
             }
+            
+            
             existingGRNdetail.GRNDId = goodReceivedNoteDetailDTO.GRNDId;
             existingGRNdetail.WarehousId = goodReceivedNoteDetailDTO.WarehousId;
             existingGRNdetail.Quantity = goodReceivedNoteDetailDTO.Quantity;
@@ -111,7 +105,8 @@ namespace AccountManagermnet.Controllers
             existingGRNdetail.CreditAccount = goodReceivedNoteDetailDTO.CreditAccount;
             existingGRNdetail.GRN_Id = goodReceivedNoteDetailDTO.GRN_Id;
             existingGRNdetail.ProductId = goodReceivedNoteDetailDTO.ProductId;
-
+            existingGRNdetail.TotalPrice = goodReceivedNoteDetailDTO.Quantity * goodReceivedNoteDetailDTO.UnitPirce;
+            
             await _context.SaveChangesAsync();
             return Ok("Cập nhật thành công");
         }
