@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AccountManagermnet.Domain
 {
@@ -20,13 +21,13 @@ namespace AccountManagermnet.Domain
         public string CreditAccount { get; set; } = "";
 
         //Liên kết One to Many vs GoodsReceivedNote
-        public int GRN_Id {  get; set; }
+        public int GRN_Id { get; set; }
         public GoodsReceivedNote GoodsReceivedNote { get; set; }
 
         //Liên kết One to Many vs ProductCategory
         public string ProductId { get; set; }
         public ProductCategory ProductCategorys { get; set; }
 
-
+        public long TotalPrice { get; set; }
     }
 }

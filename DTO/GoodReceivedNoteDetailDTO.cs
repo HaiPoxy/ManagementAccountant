@@ -18,5 +18,9 @@ namespace AccountManagermnet.DTO
 
         //Liên kết One to Many vs ProductCategory
         public string ProductId { get; set; }
+        public long TotalPrice { get; private set; }
+
+      
+
     }
 }
