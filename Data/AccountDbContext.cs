@@ -15,6 +15,8 @@ namespace AccountManagermnet.Data
         public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<GoodsReceivedNoteDetail> GoodsReceivedNoteDetails { get; set; }
         public DbSet<GoodsReceivedNote> GoodsReceivedNotes { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,6 +34,10 @@ namespace AccountManagermnet.Data
                 .HasOne (gd =>  gd.GoodsReceivedNote)
                 .WithMany(g => g.GoodsReceivedNoteDetails)
                 .HasForeignKey(g => g.GRN_Id);
+            modelBuilder.Entity<Role>()
+                .HasOne(u => u.User)
+                .WithMany(r => r.Roles)
+                .HasForeignKey(r => r.UserId);
 
         }
 

@@ -51,7 +51,7 @@ namespace AccountManagermnet.Controllers
                                              CreditAccount = d.CreditAccount,
                                              GRN_Id = d.GRN_Id,
                                              ProductId = d.ProductId,
-                                             TotalPrice = (long) d.TotalPrice,
+                                             TotalPrice = d.TotalPrice,
                                          }).ToList(),
 
                                      })
@@ -66,6 +66,7 @@ namespace AccountManagermnet.Controllers
             }
             return Ok(pageResult);
 
+            
 
             ////cách 1
             //var listGRN = await _context.GoodsReceivedNotes
@@ -75,8 +76,8 @@ namespace AccountManagermnet.Controllers
             //            .ToListAsync();
             //return Ok(listGRN);
 
-
         }
+
         [HttpPost]
         public async Task<ActionResult<GoodsReceivedNote>> CreateNewGRN(GoodsReceivedNoteDTO goodsReceivedNoteDTO)
         {
@@ -90,12 +91,7 @@ namespace AccountManagermnet.Controllers
                         await transaction.RollbackAsync();
                         return Conflict(ErrorConst.ID_IS_EXISTS);
                     }
-                    //DateTime documentDay;
-                    //if (!DateTime.TryParse(goodsReceivedNoteDTO.DocumentDay, out documentDay))
-                    //{
-                    //    // Nếu không thể chuyển đổi, trả về lỗi BadRequest
-                    //    return BadRequest("Không thể chuyển đổi");
-                    //}
+                    
                     var newGRN = new GoodsReceivedNote
                     {
                         DocumentDay = goodsReceivedNoteDTO.DocumentDay,
@@ -106,23 +102,39 @@ namespace AccountManagermnet.Controllers
                     
                     _context.GoodsReceivedNotes.Add(newGRN);
                     await _context.SaveChangesAsync();           
-                        foreach (var detailDTO in goodsReceivedNoteDTO.GoodReceivedNoteDetails)
+                        foreach (var detailDTO in goodsReceivedNoteDTO.GoodsReceivedNoteDetails)
                         {
-                            var newGRNDetail = new GoodsReceivedNoteDetail
-                            {
-                                WarehousId = detailDTO.WarehousId,
-                                Quantity = detailDTO.Quantity,
-                                UnitPirce = detailDTO.UnitPirce,
-                                DebitAccount = detailDTO.DebitAccount,
-                                CreditAccount = detailDTO.CreditAccount,
-                                GRN_Id = newGRN.GRNId,
-                                ProductId = detailDTO.ProductId,
-                                TotalPrice = (long) detailDTO.Quantity * detailDTO.UnitPirce,
-                            };
+                            var creditAcc = detailDTO.CreditAccount;
+                            var debitAcc = detailDTO.DebitAccount;
 
-                            // Thêm goodsReceivedNoteDetail vào cơ sở dữ liệu
-                            _context.GoodsReceivedNoteDetails.Add(newGRNDetail);
-                        }
+                            // Kiểm tra xem các tài khoản đã tồn tại trong bảng AccountCategory chưa
+                            var existingCreditAcc = await _context.AccountCategorys.FindAsync(creditAcc);
+                            if (existingCreditAcc == null)
+                            {
+                                return NotFound("Không tìm  thấy tài có này");
+                            }
+                            var existingDebitAcc = await _context.AccountCategorys.FindAsync(debitAcc);
+                            if (existingCreditAcc == null)
+                            {
+                                return NotFound("Không tìm  thấy tài khoản nợ này");
+                            }
+
+                            var newGRNDetail = new GoodsReceivedNoteDetail
+                                {
+                                    WarehousId = detailDTO.WarehousId,
+                                    Quantity = detailDTO.Quantity,
+                                    UnitPirce = detailDTO.UnitPirce,
+                                    DebitAccount = debitAcc,
+                                    CreditAccount = creditAcc,
+                                    GRN_Id = newGRN.GRNId,
+                                    ProductId = detailDTO.ProductId,
+                                    TotalPrice = (long) detailDTO.Quantity * detailDTO.UnitPirce,
+                                };
+
+                                // Thêm goodsReceivedNoteDetail vào cơ sở dữ liệu
+                                _context.GoodsReceivedNoteDetails.Add(newGRNDetail);
+                            }
+                    
                     await _context.SaveChangesAsync();
 
                     await transaction.CommitAsync();
@@ -139,7 +151,6 @@ namespace AccountManagermnet.Controllers
             }
 
         }
-
         
         [HttpPut("{id}")]
         public async Task<ActionResult<GoodsReceivedNote>> UpdateGRN(int id, [FromBody] GoodsReceivedNoteDTO goodsReceivedNoteDTO)
@@ -161,7 +172,7 @@ namespace AccountManagermnet.Controllers
             //Xóa goodsReceivedNoteDetail hiện tại
             _context.GoodsReceivedNoteDetails.RemoveRange(existingGRN.GoodsReceivedNoteDetails);
 
-            foreach (var detailDTO in goodsReceivedNoteDTO.GoodReceivedNoteDetails)
+            foreach (var detailDTO in goodsReceivedNoteDTO.GoodsReceivedNoteDetails)
             {
                 //Thêm goodsReceivedNoteDetail mới
                 existingGRN.GoodsReceivedNoteDetails.Add(new GoodsReceivedNoteDetail

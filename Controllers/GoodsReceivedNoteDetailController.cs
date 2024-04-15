@@ -62,6 +62,28 @@ namespace AccountManagermnet.Controllers
         //{
         //    return (double) quantity * unitPrice;
         //}
+
+        [HttpGet("details/{grnId}")]
+        public async Task<ActionResult<List<GoodsReceivedNoteDetail>>> GetChildAccounts(int grnId)
+        {
+            try
+            {
+
+                // Lấy danh sách các tài khoản con có ParentId trùng với parentId được nhập vào
+                var details = await _context.GoodsReceivedNoteDetails.Where(d => d.GRN_Id == grnId).ToListAsync();
+       
+                {
+                    return NotFound("Không tìm thấy Chi Tiết Phiếu nào từ Mã phiếu đã nhập.");
+                }
+
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi lấy danh sách Chi Tiết Phiếu: {ex.Message}");
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult<GoodsReceivedNoteDetail>> CreateNewGRNdetail(GoodReceivedNoteDetailDTO goodReceivedNoteDetailDTO)
         {
@@ -70,15 +92,30 @@ namespace AccountManagermnet.Controllers
             {
                 return Conflict(ErrorConst.ID_IS_EXISTS);
             }
-
+            var debitAcc = goodReceivedNoteDetailDTO.DebitAccount;
+            var creditAcc = goodReceivedNoteDetailDTO.CreditAccount;
+            if(string.IsNullOrEmpty(creditAcc) || string.IsNullOrEmpty(debitAcc))
+            {
+                return BadRequest("Không được để trống thông tin tài khoản");
+            }
+            var existingDebitAcc = await _context.AccountCategorys.FindAsync(debitAcc);
+            if (existingDebitAcc == null)
+            {
+                return NotFound("Tài khoản nợ này không tồn tại");
+            }
+            var existingCreditAcc = await _context.AccountCategorys.FindAsync(creditAcc);
+            if (existingCreditAcc == null)
+            {
+                return NotFound("Tài khoản có này không tồn tại");
+            }
             var newGRNdetail = new GoodsReceivedNoteDetail
 
             {
                 WarehousId = goodReceivedNoteDetailDTO.WarehousId,
                 Quantity = goodReceivedNoteDetailDTO.Quantity,      
                 UnitPirce = goodReceivedNoteDetailDTO.UnitPirce,
-                DebitAccount = goodReceivedNoteDetailDTO.DebitAccount,
-                CreditAccount = goodReceivedNoteDetailDTO.CreditAccount,
+                DebitAccount = debitAcc,
+                CreditAccount = creditAcc,
                 GRN_Id = goodReceivedNoteDetailDTO.GRN_Id,
                 ProductId = goodReceivedNoteDetailDTO.ProductId,
                 TotalPrice = goodReceivedNoteDetailDTO.Quantity * goodReceivedNoteDetailDTO.UnitPirce,
@@ -94,10 +131,7 @@ namespace AccountManagermnet.Controllers
             if (existingGRNdetail is null)
             {
                 return NotFound(string.Format(ErrorConst.ID_IS_NOT_EXISTS, goodReceivedNoteDetailDTO.GRNDId));
-            }
-            
-            
-            existingGRNdetail.GRNDId = goodReceivedNoteDetailDTO.GRNDId;
+           }
             existingGRNdetail.WarehousId = goodReceivedNoteDetailDTO.WarehousId;
             existingGRNdetail.Quantity = goodReceivedNoteDetailDTO.Quantity;
             existingGRNdetail.UnitPirce = goodReceivedNoteDetailDTO.UnitPirce;
