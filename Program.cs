@@ -1,6 +1,8 @@
 
+using AccountManagermnet.Constants;
 using AccountManagermnet.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AccountManagermnet
 {
@@ -14,13 +16,16 @@ namespace AccountManagermnet
 
             builder.Services.AddControllers().AddNewtonsoftJson(option =>{
                 option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                option.SerializerSettings.DateFormatString = "yyyy/MM/dd";
+
             });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<AccountDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings:DbConnect").Value));
             
+                options.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings:DbConnect").Value));
+                
 
             builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
             {

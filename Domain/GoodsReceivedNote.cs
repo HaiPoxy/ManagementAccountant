@@ -15,7 +15,7 @@ namespace AccountManagermnet.Domain
 
 
         [DataType(DataType.Date)]
-        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        //[DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime DocumentDay { get; set; }
 
         [StringLength(50)]

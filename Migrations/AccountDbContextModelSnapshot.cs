@@ -49,7 +49,7 @@ namespace AccountManagermnet.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AccountCategorys");
+                    b.ToTable("AccountCategorys", (string)null);
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNote", b =>
@@ -82,7 +82,7 @@ namespace AccountManagermnet.Migrations
                     b.HasIndex("PersonID")
                         .IsUnique();
 
-                    b.ToTable("GoodsReceivedNotes");
+                    b.ToTable("GoodsReceivedNotes", (string)null);
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNoteDetail", b =>
@@ -130,7 +130,7 @@ namespace AccountManagermnet.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("GoodsReceivedNoteDetails");
+                    b.ToTable("GoodsReceivedNoteDetails", (string)null);
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.Person", b =>
@@ -165,7 +165,7 @@ namespace AccountManagermnet.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Persons");
+                    b.ToTable("Persons", (string)null);
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.ProductCategory", b =>
@@ -200,7 +200,7 @@ namespace AccountManagermnet.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProductCategories");
+                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNote", b =>
