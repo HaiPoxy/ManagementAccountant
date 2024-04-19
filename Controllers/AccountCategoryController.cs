@@ -96,59 +96,7 @@ namespace AccountManagermnet.Controllers
 
         }
 
-
-        //[HttpGet]
-        //public async Task<ActionResult<List<AccountCategory>>> GetAccountByname(string? name, string id, int offset, int limit)
-        //{
-
-        //    {
-
-        //        if (string.IsNullOrEmpty(name))
-        //        {
-        //            // Trả về toàn bộ danh sách tài khoản nếu không có tên được nhập
-        //            //var allAccounts = await _context.AccountCategorys.ToListAsync();
-        //            //return allAccounts;
-        //            var accountList = await _context.AccountCategorys
-        //                    .OrderBy(b => b.Id)
-        //                    .Skip(offset)
-        //                    .Take(limit)
-        //                    .ToListAsync();
-
-        //            var pageResult = new PageResult<AccountCategory>(offset, limit, 0, 0, accountList);
-        //            pageResult.Pos = offset;
-        //            pageResult.total_count = 0;
-        //            if (offset == 0)
-        //            {
-        //                pageResult.total_count = await _context.AccountCategorys.CountAsync();
-        //            }
-        //            return Ok(pageResult);
-        //        }
-
-        //        // Tìm kiếm tài khoản theo tên
-        //        var accounts = await _context.AccountCategorys.Where(a => a.Name.Contains(name))
-        //                                    .OrderBy(b => b.Id)
-        //                                    .Skip(offset)
-        //                                    .Take(limit)
-        //                                    .ToListAsync();
-
-        //        var pageResultByName = new PageResult<AccountCategory>(offset, limit, 0, 0, accounts);
-        //        pageResultByName.Pos = offset;
-        //        pageResultByName.total_count = 0;
-        //        if (offset == 0)
-        //        {
-        //            pageResultByName.total_count = await _context.AccountCategorys.CountAsync();
-        //        }
-
-        //        if (accounts.Count == 0)
-        //        {
-        //            return NotFound("Không tìm thấy tài khoản nào.");
-        //        }
-        //        return accounts;
-
-
-        //    }
-
-        //}
+        
 
         //[HttpGet("{parentId}/account")]
         //public async Task<ActionResult<List<AccountCategory>>> accountChild(string parentId)

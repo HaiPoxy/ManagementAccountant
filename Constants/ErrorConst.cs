@@ -16,5 +16,8 @@
 
         public const string ERROR_UPDATE = "Lỗi cập nhật";
 
+        public const string USER_IS_EXISTS = "Tài khoản đã tồn tại";
+
+
     }
 }
