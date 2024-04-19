@@ -1,8 +1,12 @@
 
 using AccountManagermnet.Constants;
 using AccountManagermnet.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics.Metrics;
+using System.Text;
 
 namespace AccountManagermnet
 {
@@ -11,8 +15,31 @@ namespace AccountManagermnet
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            //JWT
+            var tkConf = builder.Configuration.GetSection("Jwt");
+
+            var tokenValidationPrameter = new TokenValidationParameters
+            {
+
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = false,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = tkConf["Issuer"],
+                ValidAudience = tkConf["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tkConf["Key"]))
+            };
 
             // Add services to the container.
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(j => 
+            {
+                j.TokenValidationParameters = tokenValidationPrameter;
+            });
 
             builder.Services.AddControllers().AddNewtonsoftJson(option =>{
                 option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
@@ -44,7 +71,7 @@ namespace AccountManagermnet
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
+            app.UseAuthentication();
 
             app.MapControllers();
 

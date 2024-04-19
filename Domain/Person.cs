@@ -6,7 +6,7 @@ namespace AccountManagermnet.Domain
     public class Person
     {
         [Key]
-        [NotNull] 
+        [NotNull]
         public string Id { get; set; } = "";
         [StringLength(50)]
         public string PName { get; set; } = "";
@@ -18,11 +18,8 @@ namespace AccountManagermnet.Domain
         public string Email { get; set; } = "";
         [StringLength(50)]
         public string TaxCode { get; set; } = "";
-        
+
         //Reference GRN
-        public GoodsReceivedNote GoodsReceivedNote { get; set; } 
-
-        
-
+        public GoodsReceivedNote GoodsReceivedNote { get; set; }
     }
 }

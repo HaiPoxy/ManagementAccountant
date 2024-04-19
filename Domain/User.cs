@@ -10,10 +10,11 @@ namespace AccountManagermnet.Domain
         public int Id { get; set; }
 
         [StringLength(50)]
-        public string Name { get; set; } = " ";
+        public string UserName { get; set; } = "";
         [StringLength(50)]
-        public string Email { get; set; } = " ";
+        public string Email { get; set; } = "";
+        [StringLength(500)]
+        public string Password { get; set; } = "";
 
-        public ICollection<Role> Roles { get; set; }
     }
 }
