@@ -16,5 +16,6 @@ namespace AccountManagermnet.Domain
         [StringLength(500)]
         public string Password { get; set; } = "";
 
+        public IList<UserRole> UserRoles { get; set; }
     }
 }
