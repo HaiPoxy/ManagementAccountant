@@ -15,7 +15,7 @@ using System.Text;
 namespace AccountManagermnet.Controllers
 {
       
-    public class UserController : BaseDataController
+    public class UserController : BaseDataController 
     {
         private readonly AccountDbContext _context;
 
@@ -54,25 +54,49 @@ namespace AccountManagermnet.Controllers
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
+
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == loginDTO.UserName);
+                if (user != null)
+                {
+                    // Kiểm tra mật khẩu
+                    if (VerifyPassword(loginDTO.Password, user.Password))
+                    {
+                        var claims = new List<Claim> {
+                    new Claim(JwtRegisteredClaimNames.Sub, _config["Jwt:Subject"]),
+                    new Claim("Id", user.Id.ToString()),
+                    new Claim("UserName", user.UserName)
+                };
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+                        var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                        var token = new JwtSecurityToken(
+                            _config["Jwt:Issuer"],
+                            _config["Jwt:Audience"],
+                            claims,
+                            expires: DateTime.UtcNow.AddMinutes(10),
+                            signingCredentials: signIn);
+
+                        var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
+                        return Ok(jwtToken);
+                    }
+                    else
+                    {
+                        return BadRequest("Mật khẩu không đúng");
+                    }
+                }
+                else
+                {
+                    return NotFound("Người dùng không tồn tại");
+                }
+            }
+            else
             {
                 return BadRequest(ModelState);
             }
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == loginDTO.UserName);
-            if (user == null)
-            {
-                return NotFound("Tài khoản hoặc mật khẩu không đúng!");
-            }
-
-            // Mã hóa mật khẩu được cung cấp và so sánh với mật khẩu đã lưu trong cơ sở dữ liệu
-            if (!VerifyPassword(loginDTO.Password, user.Password))
-            {
-                return NotFound("Tài khoản hoặc mật khẩu không đúng!!");
-            }
-            var token = GenerateToken(loginDTO.UserName);
-            return Ok(token);
         }
+
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -170,28 +194,6 @@ namespace AccountManagermnet.Controllers
                 // So sánh mật khẩu đã được mã hóa với mật khẩu đã lưu trong cơ sở dữ liệu
                 return hashedInput.Equals(hashedPassword);
             }
-        }
-
-        //Generate Token
-        private string GenerateToken(string Username)
-        {
-            var hashedKey = HashPassword(_config.GetSection("Jwt:Key").Value); // Mã hóa khóa bí mật
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(hashedKey));
-            var credential = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claim = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, Username),
-            };
-
-            var token = new JwtSecurityToken(
-                _config.GetSection("Jwt:Issuer").Value,
-                _config.GetSection("Jwt:Audience").Value,
-                claim,
-                expires: DateTime.Now.AddMinutes(15),
-                signingCredentials: credential);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         #endregion
