@@ -1,8 +1,10 @@
-
+﻿
 using AccountManagermnet.Constants;
 using AccountManagermnet.Data;
+using AccountManagermnet.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +19,7 @@ namespace AccountManagermnet
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-   
+
             builder.Services.AddControllers();
             builder.Services.AddAuthentication(options =>
             {
@@ -36,6 +38,8 @@ namespace AccountManagermnet
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                 };
             });
+;
+
             builder.Services.AddAuthorization(options =>
             {
                 options.DefaultPolicy = new AuthorizationPolicyBuilder(
@@ -48,14 +52,14 @@ namespace AccountManagermnet
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(opt =>
             {
-                opt.SwaggerDoc("v1", new OpenApiInfo { Title = "MyAPI", Version = "v1" });
+                opt.SwaggerDoc("v1", new OpenApiInfo { Title = "ManagementAccountant", Version = "v1" });
                 opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
                     Description = "Please enter token",
                     Name = "Authorization",
                     Type = SecuritySchemeType.Http,
-                    BearerFormat = "JWT"    ,
+                    BearerFormat = "JWT",
                     Scheme = "bearer"
                 });
 
@@ -75,7 +79,8 @@ namespace AccountManagermnet
                 });
             });
             //newtonSoft
-            builder.Services.AddControllers().AddNewtonsoftJson(option =>{
+            builder.Services.AddControllers().AddNewtonsoftJson(option =>
+            {
                 option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 option.SerializerSettings.DateFormatString = "yyyy/MM/dd";
 
@@ -84,9 +89,9 @@ namespace AccountManagermnet
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<AccountDbContext>(options =>
-            
+
                 options.UseSqlServer(builder.Configuration.GetSection("ConnectionStrings:DbConnect").Value));
-                
+
             builder.Services.AddCors(p => p.AddPolicy("corsapp", builder =>
             {
                 builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
@@ -94,21 +99,22 @@ namespace AccountManagermnet
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                // Configure the HTTP request pipeline.
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
+                }
+                app.UseCors("corsapp");
+                app.UseHttpsRedirection();
+
+                app.UseAuthorization();
+                app.UseAuthentication();
+
+                app.MapControllers();
+
+                app.Run();
             }
-            app.UseCors("corsapp");
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-            app.UseAuthentication();
-
-            app.MapControllers();
-
-            app.Run();
         }
-    }
-}
+    }  
+   

@@ -11,7 +11,7 @@ namespace AccountManagermnet.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GoodsReceivedNoteDetailController : ControllerBase
+    public class GoodsReceivedNoteDetailController : BaseDataController
     {
         private readonly AccountDbContext _context;
 

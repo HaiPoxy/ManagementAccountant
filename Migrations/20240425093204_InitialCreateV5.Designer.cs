@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AccountManagermnet.Migrations
 {
     [DbContext(typeof(AccountDbContext))]
-    [Migration("20240419034031_InitialCreateV5")]
+    [Migration("20240425093204_InitialCreateV5")]
     partial class InitialCreateV5
     {
         /// <inheritdoc />

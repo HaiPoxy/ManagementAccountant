@@ -15,7 +15,8 @@ namespace AccountManagermnet.Domain
         public string Email { get; set; } = "";
         [StringLength(500)]
         public string Password { get; set; } = "";
+        public ICollection<UserRole> UserRoles { get; set; }
 
-        public IList<UserRole> UserRoles { get; set; }
+
     }
 }
