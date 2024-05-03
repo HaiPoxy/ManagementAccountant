@@ -11,7 +11,7 @@ namespace AccountManagermnet.Controllers
     
     [Route("api/[controller]")]
     [ApiController]
-    public class PersonController : ControllerBase
+    public class PersonController : BaseDataController
     {
         private readonly  AccountDbContext _context;
 

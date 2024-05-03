@@ -3,6 +3,7 @@ using AccountManagermnet.Data;
 using AccountManagermnet.Domain;
 using AccountManagermnet.DTO;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -27,7 +28,7 @@ namespace AccountManagermnet.Controllers
             _config = config;
 
         }
-        
+        [Authorize(Roles = "Admin, Manager")]
         [HttpGet]
         public async Task<ActionResult<User>> GetAllUser(string? search, int offset, int limit)
         {
@@ -38,15 +39,28 @@ namespace AccountManagermnet.Controllers
 
             }
             var userList = await query.OrderBy(x => x.Id)
-                                     .Skip(offset)
-                                     .Take(limit)
-                                     .ToListAsync();
+                         .Skip(offset)
+                         .Take(limit)
+                         .Select(u => new User
+                         {
+                             Id = u.Id,
+                             UserName = u.UserName,
+                             Email = u.Email,
+                             Password = u.Password,
+                             UserRoles = u.UserRoles
+                             .Select(ur => new UserRole
+                             {
+                                 UserId = ur.UserId,
+                                 RoleId = ur.RoleId,
+                             }).ToList()
+                         })
+                         .ToListAsync();
             var pageResult = new PageResult<User>(offset, limit, 0, 0, userList);
             pageResult.Pos = offset;
             pageResult.total_count = 0;
             if (offset == 0)
             {
-                pageResult.total_count = await query.CountAsync();
+                pageResult.total_count =    await query.CountAsync();
             }
             return Ok(pageResult);
 
@@ -65,16 +79,23 @@ namespace AccountManagermnet.Controllers
                     if (VerifyPassword(loginDTO.Password, user.Password))
                     {
                         var claims = new List<Claim> {
-                    new Claim(JwtRegisteredClaimNames.Sub, _config["Jwt:Subject"]),
-                    new Claim("Id", user.Id.ToString()),
-                    new Claim("UserName", user.UserName)
-                };
+                            new Claim(JwtRegisteredClaimNames.Sub, _config["Jwt:Subject"]),
+                            new Claim("id", user.Id.ToString()),
+                            new Claim("userName", user.UserName)
+                        };
+                        var userRoles = _context.UserRoles.Where(u => u.UserId == user.Id).ToList();
+                        var roleIds = userRoles.Select(s => s.RoleId).ToList();
+                        var roles = _context.Roles.Where(r => roleIds.Contains(r.Id)).ToList();
+                        foreach (var role in roles)
+                        {
+                            claims.Add(new Claim("role", role.RoleName));
+                        }
                         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
                         var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                         var token = new JwtSecurityToken(
                             _config["Jwt:Issuer"],
                             _config["Jwt:Audience"],
-                            claims,
+                            claims,     
                             expires: DateTime.UtcNow.AddMinutes(10),
                             signingCredentials: signIn);
 
@@ -97,42 +118,60 @@ namespace AccountManagermnet.Controllers
             }
         }
 
-
+        // Trong lớp UserController
         [AllowAnonymous]
         [HttpPost("register")]
         public async Task<ActionResult<User>> CreateNewUser(UserDTO userDTO)
         {
-            
-                try
+            try
+            {
+                var existingUser = await _context.Users.FirstOrDefaultAsync(p => p.UserName == userDTO.UserName);
+                if (existingUser != null)
                 {
-                    var existingUser = await _context.Users.FirstOrDefaultAsync(p => p.UserName == userDTO.UserName);
-                    if (existingUser is not null)
-                    {
-                        return Conflict(ErrorConst.USER_IS_EXISTS);
-                    }
+                    return Conflict(ErrorConst.USER_IS_EXISTS);
+                }
+
                 string hashPassword = HashPassword(userDTO.Password);
-                    var newUser = new User
-                    {
-                        UserName = userDTO.UserName,
-                        Email = userDTO.Email,
-                        Password = hashPassword,
-                    };
 
-                    _context.Users.Add(newUser);
-                    await _context.SaveChangesAsync();
-                    return Ok("Thêm thành công");
-                }
-                catch (Exception)
+                var newUser = new User
                 {
-                    return StatusCode(500, $"Lỗi khi tạo phiếu nhập");
+                    UserName = userDTO.UserName,
+                    Email = userDTO.Email,
+                    Password = hashPassword,
+                };
 
+                // Thêm người dùng mới vào cơ sở dữ liệu
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+                foreach (var userRoleDTO in userDTO.UserRoles)
+                {
+                    var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == userRoleDTO.RoleId);
+                    if (role != null)
+                    {
+                        var userRole = new UserRole
+                        {
+                            UserId = newUser.Id,
+                            RoleId = role.Id
+                        };
+                        _context.UserRoles.Add(userRole);
+                    }
                 }
+                await _context.SaveChangesAsync();
+
+                return Ok("Thêm thành công");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, $"Lỗi khi tạo phiếu nhập");
+            }
         }
-        
+
+        [Authorize(Roles = "Admin, Manager")]
         [HttpPut("{id}")]
         public async Task<ActionResult<User>> UpdateUser(int id, [FromBody] UserDTO userDTO)
         {
             var existingUser = await _context.Users
+                                .Include(x => x.UserRoles)
                                 .FirstOrDefaultAsync(g => g.Id == id);
             if (existingUser is null)
             {
@@ -143,13 +182,22 @@ namespace AccountManagermnet.Controllers
             existingUser.UserName = userDTO.UserName;
             existingUser.Email = userDTO.Email;
             existingUser.Password = hashPassword;
-            
+
+            _context.UserRoles.RemoveRange(existingUser.UserRoles);
+            foreach (var userRoleDTO in userDTO.UserRoles)
+            {
+                existingUser.UserRoles.Add(new UserRole
+                {
+                    UserId = userRoleDTO.UserId,
+                    RoleId = userRoleDTO.RoleId,
+                });
+            }
             await _context.SaveChangesAsync();
             return Ok("Cập nhật thành công");
         }
 
-        
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {

@@ -13,10 +13,7 @@ namespace AccountManagermnet.Domain
         [StringLength(50)]
         [Required]
         public string RoleName { get; set; } = " ";
+        public ICollection<UserRole> UserRoles { get; set; }
 
-        public int UserId { get; set; }
-
-        public IList<UserRole> UserRoles { get; set; }
-        
     }
 }

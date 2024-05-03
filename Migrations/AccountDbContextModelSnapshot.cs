@@ -203,6 +203,24 @@ namespace AccountManagermnet.Migrations
                     b.ToTable("ProductCategories");
                 });
 
+            modelBuilder.Entity("AccountManagermnet.Domain.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("AccountManagermnet.Domain.User", b =>
                 {
                     b.Property<int>("Id")
@@ -229,6 +247,21 @@ namespace AccountManagermnet.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AccountManagermnet.Domain.UserRole", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNote", b =>
@@ -261,6 +294,25 @@ namespace AccountManagermnet.Migrations
                     b.Navigation("ProductCategorys");
                 });
 
+            modelBuilder.Entity("AccountManagermnet.Domain.UserRole", b =>
+                {
+                    b.HasOne("AccountManagermnet.Domain.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AccountManagermnet.Domain.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AccountManagermnet.Domain.GoodsReceivedNote", b =>
                 {
                     b.Navigation("GoodsReceivedNoteDetails");
@@ -275,6 +327,16 @@ namespace AccountManagermnet.Migrations
             modelBuilder.Entity("AccountManagermnet.Domain.ProductCategory", b =>
                 {
                     b.Navigation("GoodsReceivedNoteDetails");
+                });
+
+            modelBuilder.Entity("AccountManagermnet.Domain.Role", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("AccountManagermnet.Domain.User", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }
