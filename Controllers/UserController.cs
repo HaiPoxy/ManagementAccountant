@@ -30,39 +30,26 @@ namespace AccountManagermnet.Controllers
         }
         [Authorize(Roles = "Admin, Manager")]
         [HttpGet]
-        public async Task<ActionResult<User>> GetAllUser(string? search, int offset, int limit)
+        public async Task<ActionResult<User>> GetAllUser(string? search)
         {
             var query = _context.Users.AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(g => g.Id.ToString().Contains(search));
+                query = query.Where(g => g.Id.ToString().Contains(search) || g.UserName.Contains(search));
 
             }
             var userList = await query.OrderBy(x => x.Id)
-                         .Skip(offset)
-                         .Take(limit)
-                         .Select(u => new User
+                         .Select(u => new
                          {
-                             Id = u.Id,
-                             UserName = u.UserName,
-                             Email = u.Email,
-                             Password = u.Password,
-                             UserRoles = u.UserRoles
-                             .Select(ur => new UserRole
-                             {
-                                 UserId = ur.UserId,
-                                 RoleId = ur.RoleId,
-                             }).ToList()
+                             u.Id,
+                             u.UserName,
+                             u.Email,
+                             u.Password,
+                             Roles = u.UserRoles.Select(ur => ur.Role.RoleName)
                          })
                          .ToListAsync();
-            var pageResult = new PageResult<User>(offset, limit, 0, 0, userList);
-            pageResult.Pos = offset;
-            pageResult.total_count = 0;
-            if (offset == 0)
-            {
-                pageResult.total_count =    await query.CountAsync();
-            }
-            return Ok(pageResult);
+           
+            return Ok(userList);
 
         }
         [AllowAnonymous]
@@ -145,18 +132,21 @@ namespace AccountManagermnet.Controllers
                 await _context.SaveChangesAsync();
                 foreach (var userRoleDTO in userDTO.UserRoles)
                 {
+                    var userRole = new UserRole
+                    {
+                        UserId = newUser.Id,
+                        RoleId = userRoleDTO.RoleId, // sử dụng Id của role từ userRoleDTO
+                    };
+                    _context.UserRoles.Add(userRole);
+
                     var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == userRoleDTO.RoleId);
                     if (role != null)
                     {
-                        var userRole = new UserRole
-                        {
-                            UserId = newUser.Id,
-                            RoleId = role.Id
-                        };
-                        _context.UserRoles.Add(userRole);
+                        // Lấy ra tên của role và sử dụng trong logic của bạn
+                        var roleName = role.RoleName;
+                        // Thêm logic của bạn ở đây
                     }
                 }
-                await _context.SaveChangesAsync();
 
                 return Ok("Thêm thành công");
             }
@@ -166,7 +156,7 @@ namespace AccountManagermnet.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, Manager")]
+        [Authorize(Roles = "Admin, Scrum Master")]
         [HttpPut("{id}")]
         public async Task<ActionResult<User>> UpdateUser(int id, [FromBody] UserDTO userDTO)
         {
@@ -197,7 +187,7 @@ namespace AccountManagermnet.Controllers
         }
 
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Scrum Master")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
